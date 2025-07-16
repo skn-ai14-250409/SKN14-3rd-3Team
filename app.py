@@ -1,15 +1,16 @@
 import json
 import os
+import uuid
 import streamlit as st
 import time
 
 from datetime import datetime
 from PIL import Image
+from app_llm_cli import run_chatbot
 
 # 페이지 설정
 st.set_page_config(
     page_title="LG 세탁기/건조기 매뉴얼 Q&A",
-    page_icon="🧺",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -42,6 +43,26 @@ TEMP_DIR = "temp"
 if not os.path.exists(TEMP_DIR):
     os.makedirs(TEMP_DIR)
 
+# 샘플 FAQ 데이터
+SAMPLE_FAQS = [
+    "세탁기 에러코드 해결법",
+    "건조기 필터 청소 방법",
+    "세탁 용량 가이드",
+    "세탁기 소음 해결법",
+    "건조 시간 단축 방법",
+]
+
+# 헤더
+st.markdown(
+    """
+<div class="chat-header">
+    <h1>세탁기/건조기 매뉴얼 Q&A</h1>
+    <p>궁금한 점을 언제든지 물어보세요!</p>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
 # 세션 상태 초기화: 여러 대화 관리
 if "conversations" not in st.session_state:
     st.session_state.conversations = {
@@ -61,26 +82,6 @@ if "conversations" not in st.session_state:
 
 if "is_typing" not in st.session_state:
     st.session_state.is_typing = False
-
-# 샘플 FAQ 데이터
-SAMPLE_FAQS = [
-    "세탁기 에러코드 해결법",
-    "건조기 필터 청소 방법",
-    "세탁 용량 가이드",
-    "세탁기 소음 해결법",
-    "건조 시간 단축 방법",
-]
-
-# 헤더
-st.markdown(
-    """
-<div class="chat-header">
-    <h1>🧺 LG 세탁기/건조기 매뉴얼 Q&A</h1>
-    <p>궁금한 점을 언제든지 물어보세요!</p>
-</div>
-""",
-    unsafe_allow_html=True,
-)
 
 # 메인 레이아웃: 왼쪽(대화 목록), 중앙(현재 대화), 오른쪽(이미지 및 스펙)
 col1, col2, col3 = st.columns([2, 4, 2])
@@ -193,12 +194,25 @@ with col2:
 
     # 업로드된 이미지 처리
     if uploaded_image is not None:
-        image_path = os.path.join(TEMP_DIR, uploaded_image.name)
-        with open(image_path, "wb") as f:
-            f.write(uploaded_image.getbuffer())
-        current_conv["image"] = image_path
-        st.success(f"이미지가 {image_path}에 저장되었습니다.")
-        st.rerun()
+        if uploaded_image.type not in ["image/jpeg", "image/jpg", "image/png"]:
+            st.error(
+                "지원되지 않는 파일 형식입니다. jpg, jpeg, png 파일만 업로드하세요."
+            )
+        else:
+            try:
+                # 한글 파일명을 피하기 위해 UUID를 사용해 고유한 파일명 생성
+                file_extension = os.path.splitext(uploaded_image.name)[1]  # 확장자 추출
+                safe_filename = (
+                    f"image_{uuid.uuid4().hex}{file_extension}"  # 고유한 파일명 생성
+                )
+                image_path = os.path.join(TEMP_DIR, safe_filename)
+
+                with open(image_path, "wb") as f:
+                    f.write(uploaded_image.getbuffer())
+                current_conv["image"] = image_path
+                st.success(f"이미지가 {image_path}에 저장되었습니다.")
+            except Exception as e:
+                st.error(f"파일 저장 중 오류 발생: {str(e)}")
 
     # 채팅 입력 영역
     st.markdown('<div class="chat-input">', unsafe_allow_html=True)
@@ -272,7 +286,7 @@ if st.session_state.is_typing:
     current_conv["messages"].append(
         {
             "role": "assistant",
-            "content": bot_response,
+            "content": run_chatbot(last_user_message),
             "timestamp": datetime.now().strftime("%H:%M"),
         }
     )
