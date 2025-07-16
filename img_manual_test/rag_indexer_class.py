@@ -1,14 +1,17 @@
+import os
 import logging
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 from tqdm import tqdm
-
 from langchain_chroma.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
-
 from utils.index import image_to_base64, summarize_image
+from dotenv import load_dotenv
 
+load_dotenv()
+
+OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
 
 @dataclass
 class IndexConfig:
@@ -75,11 +78,9 @@ class RAGIndexer:
 
         image_files = []
         for extension in self.config.supported_extensions:
-            pattern = f"*{extension}"
+            pattern = f"**/*{extension}"
             image_files.extend(figures_dir.glob(pattern))
-            # 대소문자 구분 없이 검색
-            pattern_upper = f"*{extension.upper()}"
-            image_files.extend(figures_dir.glob(pattern_upper))
+            image_files.extend(figures_dir.glob(f"**/*{extension.upper()}"))
 
         self.logger.info(f"Found {len(image_files)} image files")
         return image_files
@@ -158,25 +159,16 @@ class RAGIndexer:
             self.logger.error(f"Indexing failed: {e}")
             raise
 
-    def search_and_show(self, query: str, k: int = 1) -> None:
+    def search_and_show(self, user_img: str, k: int = 1) -> None:
         """쿼리로 검색하고 결과 표시"""
 
         # base64 길이 800으로 제한
-        query = query[:800]
+        user_img = user_img[:800]
 
         # 유사도 검색
-        results = self.vectordb.similarity_search_with_score(query, k=k)
+        results = self.vectordb.similarity_search_with_score(user_img, k=k)
+        return results[0][0].metadata['model_name'] if results else -1
 
-        for i, (doc, score) in enumerate(results):
-            # 코사인 거리
-            if score <= 0.3:
-                print(f"\n[TOP-{i + 1}]")
-                print(f'모델명 : {doc.metadata.get("model_name", "Unknown")}')
-                print(f"코사인 거리 : {score:.4f}")
-                print(f"내용 : {doc.page_content[:200]}...")
-                print("-" * 50)
-            else:
-                print("관련된 정보가 없습니다.")
 
     def get_collection_info(self) -> Dict[str, Any]:
         """컬렉션 정보 조회"""

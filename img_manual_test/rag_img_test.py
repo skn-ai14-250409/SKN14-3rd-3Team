@@ -8,7 +8,7 @@ def main():
     # 설정 생성
     config = IndexConfig(
         persistent_directory="./chroma",
-        collection_name="samsung_imgs",
+        collection_name="imgs",
         embedding_model="text-embedding-3-small",
     )
 
@@ -20,7 +20,8 @@ def main():
     img_base64 = image_to_base64(img)
 
     # 유사도 검색
-    indexer.search_and_show(img_base64)
+    result = indexer.search_and_show(img_base64)
+    print(result)
 
 
 if __name__ == "__main__":

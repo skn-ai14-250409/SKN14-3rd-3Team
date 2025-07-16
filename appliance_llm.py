@@ -9,6 +9,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_tavily import TavilySearch
 from langchain_core.documents import Document
+from rag_indexer_class import IndexConfig, RAGIndexer
+from utils.index import image_to_base64
 
 
 # Mac에서 pdfminer 경고 무시
@@ -19,6 +21,26 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+
+def search_vector_db_image(img_path):
+    """백터 디비에서 이미지의 모델을 가져온다"""
+
+    # 설정 생성
+    config = IndexConfig(
+        persistent_directory="./chroma",
+        collection_name="samsung_imgs",
+        embedding_model="text-embedding-3-small",
+    )
+
+    # 인덱서 생성 및 실행
+    indexer = RAGIndexer(config)
+
+    # 이미지 로드해서 모델명 검색
+    img_base64 = image_to_base64(img_path)
+
+    # 유사도 검색
+    model_nm = indexer.search_and_show(img_base64)
+    return model_nm
 
 def extract_text_from_pdf(pdf_path):
     """PDF 텍스트 추출"""
