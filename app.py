@@ -295,10 +295,14 @@ if st.session_state.is_typing:
         f"'{last_user_message}'에 대한 질문을 접수했습니다. LG 세탁기/건조기 매뉴얼을 기반으로 가장 정확한 답변을 준비하고 있습니다. 잠시만 기다려주세요!",
     )
 
+    image_path = None
+    if current_conv["image"] is not None:
+        image_path = os.path.abspath(current_conv["image"])
+
     current_conv["messages"].append(
         {
             "role": "assistant",
-                       "content": run_chatbot(last_user_message),
+                       "content": run_chatbot(last_user_message, image_path=image_path),
             "timestamp": datetime.now().strftime("%H:%M"),
         }
     )

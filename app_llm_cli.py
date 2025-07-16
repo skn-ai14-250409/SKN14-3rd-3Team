@@ -139,7 +139,7 @@ def enhanced_chain(query: str, retriever, llm, cot_prompt, history=[]):
     return response
 
 
-def run_chatbot(query, history=[]):
+def run_chatbot(query, image_path=None, history=[]):
     EMBEDDINGS_MODEL = "text-embedding-3-small"
     COLLECTION_NAME = "manuals"
     VECTOR_DB_DIR = "./chroma"
@@ -157,6 +157,10 @@ def run_chatbot(query, history=[]):
     retriever = indexer.vectordb.as_retriever(
         search_type="mmr", search_kwargs={"k": 8, "fetch_k": 20}
     )
+
+    if image_path:
+        model_code = search_vector_db_image(image_path)
+        query = f"{query} (모델코드: {model_code})"
 
     llm = ChatOpenAI(model=MODEL_NAME, temperature=0.3)
 
