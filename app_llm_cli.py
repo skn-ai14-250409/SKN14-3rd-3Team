@@ -3,6 +3,7 @@ import json
 import logging
 import re
 from dotenv import load_dotenv
+from utils.index import image_to_base64
 from pdfminer.high_level import extract_text
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -10,7 +11,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_tavily import TavilySearch
 from langchain_core.documents import Document
 from rag_indexer_class import IndexConfig, RAGIndexer
-from utils.index import image_to_base64
+from langchain.prompts import PromptTemplate
+
 
 
 # pdfminer 경고 무시
@@ -139,7 +141,7 @@ def enhanced_chain(query: str, retriever, llm, cot_prompt, history=[]):
     return response
 
 
-def run_chatbot(query, history=[]):
+def run_chatbot(query, image_path=None, history=[]):
     EMBEDDINGS_MODEL = "text-embedding-3-small"
     COLLECTION_NAME = "manuals"
     VECTOR_DB_DIR = "./chroma"
@@ -158,36 +160,31 @@ def run_chatbot(query, history=[]):
         search_type="mmr", search_kwargs={"k": 8, "fetch_k": 20}
     )
 
+    model_code = search_vector_db_image(image_path)
+
+    if image_path:
+        query = f"{query} (모델코드: {model_code})"
+
     llm = ChatOpenAI(model=MODEL_NAME, temperature=0.3)
 
-    cot_prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                """
-        Elaborate on the topic using a Tree of Thoughts and backtrack when necessary to construct a clear, cohesive Chain of Thought reasoning.
-        당신은 스마트한 가전 도우미입니다. 체계적으로 답변하세요:
 
-        ## 질문 분석
-        [분석 내용]
-        ## 관련 정보
-        [정보]
-        ## 답변
-        ### 1. [조건 A]
-        ### 2. [조건 B]
-        ## 추가 안내
-        """,
-            ),
-            (
-                "human",
-                """
-        질문: {query}
-        분석: {analysis}
-        컨텍스트: {context}
-        """,
-            ),
-        ]
-    )
+    cot_prompt = PromptTemplate.from_template("""
+    Elaborate on the topic using a Tree of Thoughts and backtrack when necessary to construct a clear, cohesive Chain of Thought reasoning.
+    당신은 스마트한 가전 도우미입니다. 체계적으로 답변하세요:
+
+    ## 질문 분석
+    [분석 내용]
+    ## 관련 정보
+    [정보]
+    ## 답변
+    ### 1. [조건 A]
+    ### 2. [조건 B]
+    ## 추가 안내
+
+    질문: {query}
+    분석: {analysis}
+    컨텍스트: {context}
+    """)
 
     result = enhanced_chain(query, retriever, llm, cot_prompt, history=history)
     return result.content
