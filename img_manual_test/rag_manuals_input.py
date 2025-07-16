@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # pdfminer 경고 무시
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
@@ -112,7 +112,7 @@ def main():
     """메인 실행 함수"""
     BASE_DIR = "./data/manuals/"
     EMBEDDINGS_MODEL = "text-embedding-3-small"
-    COLLECTION_NAME= "manuals"
+    COLLECTION_NAME = "manuals"
     VECTOR_DB_DIR = "./chroma"
 
     embeddings = OpenAIEmbeddings(model=EMBEDDINGS_MODEL)

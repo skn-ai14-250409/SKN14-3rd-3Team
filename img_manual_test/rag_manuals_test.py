@@ -1,8 +1,9 @@
 from rag_indexer_class import IndexConfig, RAGIndexer
 
+
 def search_manuals(query: str, k: int = 5):
     EMBEDDINGS_MODEL = "text-embedding-3-small"
-    COLLECTION_NAME= "manuals"
+    COLLECTION_NAME = "manuals"
     VECTOR_DB_DIR = "./chroma"
 
     # 설정 생성

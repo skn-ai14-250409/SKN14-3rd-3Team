@@ -13,7 +13,7 @@ from rag_indexer_class import IndexConfig, RAGIndexer
 from utils.index import image_to_base64
 
 
-# Mac에서 pdfminer 경고 무시
+# pdfminer 경고 무시
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
 # 환경변수 로드
@@ -21,6 +21,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+
 
 def search_vector_db_image(img_path):
     """백터 디비에서 이미지의 모델을 가져온다"""
@@ -42,6 +43,7 @@ def search_vector_db_image(img_path):
     model_nm = indexer.search_and_show(img_base64)
     return model_nm
 
+
 def extract_text_from_pdf(pdf_path):
     """PDF 텍스트 추출"""
     try:
@@ -50,10 +52,14 @@ def extract_text_from_pdf(pdf_path):
         print(f"PDF 읽기 실패 {pdf_path}: {e}")
         return ""
 
+
 def analyze_query_and_retrieve(query: str, retriever, llm):
     # 질문 분석 프롬프트
-    prompt = ChatPromptTemplate.from_messages([
-        ('system', """
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
         당신은 사용자의 질문을 분석하는 전문가입니다.
         다음 정보를 JSON으로 출력하세요:
         {{
@@ -61,9 +67,11 @@ def analyze_query_and_retrieve(query: str, retriever, llm):
             "main_topic": "주제",
             "conditions": ["조건1"],
             "details": ["세부사항1"]
-        }}"""),
-        ('human', "질문: {query}")
-    ])
+        }}""",
+            ),
+            ("human", "질문: {query}"),
+        ]
+    )
 
     chain = prompt | llm | StrOutputParser()
     analysis_result = chain.invoke({"query": query})
@@ -83,19 +91,19 @@ def analyze_query_and_retrieve(query: str, retriever, llm):
     try:
         # Tavily에서 검색
         search_result = tavily_tool.invoke({"query": query})
-        
+
         # 'results' 리스트 추출
         web_results = search_result.get("results", [])
-        
+
         # 각 결과를 Document로 변환
         for item in web_results:
-            content = item.get('content', '')
-            url = item.get('url', '')
-            
+            content = item.get("content", "")
+            url = item.get("url", "")
+
             if content:  # 내용이 있으면 추가
                 doc = Document(
                     page_content=content,
-                    metadata={'source': url, 'title': item.get('title', '')}
+                    metadata={"source": url, "title": item.get("title", "")},
                 )
                 all_contexts.append(doc)
     except Exception as e:
@@ -115,12 +123,11 @@ def analyze_query_and_retrieve(query: str, retriever, llm):
 
 def enhanced_chain(query: str, retriever, llm, cot_prompt):
     context, analysis = analyze_query_and_retrieve(query, retriever, llm)
-    prompt_filled = cot_prompt.invoke({
-        "query": query,
-        "analysis": analysis,
-        "context": context
-    })
+    prompt_filled = cot_prompt.invoke(
+        {"query": query, "analysis": analysis, "context": context}
+    )
     return llm.invoke(prompt_filled)
+
 
 def run_chatbot():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -131,12 +138,17 @@ def run_chatbot():
         persist_directory="./chroma",
     )
 
-    retriever = vectordb.as_retriever(search_type="mmr", search_kwargs={"k": 8, "fetch_k": 20})
-    
+    retriever = vectordb.as_retriever(
+        search_type="mmr", search_kwargs={"k": 8, "fetch_k": 20}
+    )
+
     llm = ChatOpenAI(model=MODEL_NAME, temperature=0.3)
 
-    cot_prompt = ChatPromptTemplate.from_messages([
-        ('system', """
+    cot_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
         Elaborate on the topic using a Tree of Thoughts and backtrack when necessary to construct a clear, cohesive Chain of Thought reasoning.
         당신은 스마트한 가전 도우미입니다. 체계적으로 답변하세요:
         ## 질문 분석
@@ -147,22 +159,27 @@ def run_chatbot():
         ### 1. [조건 A]
         ### 2. [조건 B]
         ## 추가 안내
-        """),
-        ('human', """
+        """,
+            ),
+            (
+                "human",
+                """
         질문: {query}
         분석: {analysis}
         컨텍스트: {context}
-        """)
-    ])
+        """,
+            ),
+        ]
+    )
 
-    print("="*60)
+    print("=" * 60)
     print("🤖 삼성 세탁기/건조기 도우미")
-    print("="*60)
+    print("=" * 60)
 
     while True:
         try:
             query = input("\n💬 질문을 입력하세요 (종료하려면 '종료'): ").strip()
-            if query.lower() == '종료':
+            if query.lower() == "종료":
                 print("👋 종료합니다.")
                 break
             if not query:
@@ -172,14 +189,15 @@ def run_chatbot():
             print("🔍 답변 생성 중...")
             result = enhanced_chain(query, retriever, llm, cot_prompt)
 
-            print("="*60)
+            print("=" * 60)
             print(result.content)
-            print("="*60)
+            print("=" * 60)
         except KeyboardInterrupt:
             print("\n👋 종료합니다.")
             break
         except Exception as e:
             print(f"❌ 오류: {e}")
+
 
 if __name__ == "__main__":
     run_chatbot()

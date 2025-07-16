@@ -6,7 +6,7 @@ def main():
     """메인 실행 함수"""
 
     VECTOR_DB_DIR = "./chroma"
-    COLLECTION_NAME= "imgs"
+    COLLECTION_NAME = "imgs"
     EMBEDDINGS_MODEL = "text-embedding-3-small"
 
     # 설정 생성

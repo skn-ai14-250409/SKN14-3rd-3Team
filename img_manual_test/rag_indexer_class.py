@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 @dataclass
 class IndexConfig:
@@ -167,8 +168,7 @@ class RAGIndexer:
 
         # 유사도 검색
         results = self.vectordb.similarity_search_with_score(user_img, k=k)
-        return results[0][0].metadata['model_name'] if results else -1
-
+        return results[0][0].metadata["model_name"] if results else -1
 
     def get_collection_info(self) -> Dict[str, Any]:
         """컬렉션 정보 조회"""
