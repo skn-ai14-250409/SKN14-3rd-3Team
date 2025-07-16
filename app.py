@@ -10,7 +10,7 @@ from app_llm_cli import run_chatbot
 
 # 페이지 설정
 st.set_page_config(
-    page_title="LG 세탁기/건조기 매뉴얼 Q&A",
+    page_title="세탁기/건조기 매뉴얼 Q&A",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -59,8 +59,7 @@ if not st.session_state.conversations:
         "messages": [
             {
                 "role": "system",
-                "content": "LG 세탁기/건조기 매뉴얼 Q&A 챗봇이 시작되었습니다.",
-                "timestamp": datetime.now().strftime("%H:%M"),
+                "content": "세탁기/건조기 매뉴얼 Q&A 챗봇이 시작되었습니다.",
             }
         ],
         "image": None,
@@ -110,7 +109,6 @@ with col1:
                 {
                     "role": "system",
                     "content": "새 대화가 시작되었습니다.",
-                    "timestamp": datetime.now().strftime("%H:%M"),
                 }
             ],
             "image": None,
@@ -124,7 +122,6 @@ messages = current_conv["messages"]
 
 # 중앙: 현재 대화
 with col2:
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     messages_container = st.container()
     with messages_container:
         st.markdown('<div class="chat-messages">', unsafe_allow_html=True)
@@ -147,7 +144,6 @@ with col2:
                     st.markdown(
                         f"""
                     <div class="message user">
-                        <div class="message-time">{message["timestamp"]}</div>
                         <div class="message-content">{message_html}</div>
                         <div class="avatar">{avatar_icon}</div>
                     </div>
@@ -160,7 +156,6 @@ with col2:
                     <div class="message bot">
                         <div class="avatar">{avatar_icon}</div>
                         <div class="message-content">{message_html}</div>
-                        <div class="message-time">{message["timestamp"]}</div>
                     </div>
                     """,
                         unsafe_allow_html=True,
@@ -193,7 +188,6 @@ with col2:
                     {
                         "role": "user",
                         "content": faq,
-                        "timestamp": datetime.now().strftime("%H:%M"),
                     }
                 )
                 st.session_state.is_typing = True
@@ -252,7 +246,6 @@ if send_button:
                 {
                     "role": "user",
                     "content": "이미지를 업로드했습니다.",
-                    "timestamp": datetime.now().strftime("%H:%M"),
                 }
             )
         image_processed = True
@@ -264,7 +257,6 @@ if send_button:
             {
                 "role": "user",
                 "content": user_input,
-                "timestamp": datetime.now().strftime("%H:%M"),
             }
         )
 
@@ -292,7 +284,7 @@ if st.session_state.is_typing:
 
     bot_response = sample_responses.get(
         last_user_message,
-        f"'{last_user_message}'에 대한 질문을 접수했습니다. LG 세탁기/건조기 매뉴얼을 기반으로 가장 정확한 답변을 준비하고 있습니다. 잠시만 기다려주세요!",
+        f"'{last_user_message}'에 대한 질문을 접수했습니다. 매뉴얼을 기반으로 가장 정확한 답변을 준비하고 있습니다. 잠시만 기다려주세요!",
     )
 
     image_path = None
@@ -302,8 +294,7 @@ if st.session_state.is_typing:
     current_conv["messages"].append(
         {
             "role": "assistant",
-                       "content": run_chatbot(last_user_message, image_path=image_path),
-            "timestamp": datetime.now().strftime("%H:%M"),
+                       "content": run_chatbot(last_user_message, image_path=image_path,  history=current_conv["messages"]),
         }
     )
     st.session_state.is_typing = False
@@ -319,7 +310,6 @@ with st.sidebar:
     if st.button("📁 대화 기록 저장"):
         try:
             chat_history = {
-                "timestamp": datetime.now().isoformat(),
                 "conversations": st.session_state.conversations,
             }
             st.download_button(
@@ -341,13 +331,13 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### ℹ️ 정보")
-    st.info("이 챗봇은 LG 세탁기/건조기 매뉴얼을 기반으로 한 Q&A 시스템입니다.")
+    st.info("이 챗봇은 SAMSANG/LG 세탁기/건조기 매뉴얼을 기반으로 한 Q&A 시스템입니다.")
 
 # 하단 정보
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: #666; font-size: 12px;'>"
-    "LG 세탁기/건조기 매뉴얼 Q&A 챗봇 | "
+    "SAMSANG/LG 세탁기/건조기 매뉴얼 Q&A 챗봇 | "
     "LangChain + RAG 기술 기반 | "
     "실시간 매뉴얼 검색 지원"
     "</div>",
