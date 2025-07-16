@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import tiktoken
 from tqdm import tqdm
@@ -6,12 +7,20 @@ from pdfminer.high_level import extract_text
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from dotenv import load_dotenv
+
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# pdfminer 경고 무시
+logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
 
 def get_pdf_files(base_dir):
-    """PDF 파일 목록 가져오기"""
-    pdf_pattern = os.path.join(base_dir, "*.pdf")
-    return glob.glob(pdf_pattern)
+    """하위 디렉토리 모든 PDF 파일 목록 가져오기"""
+    pdf_pattern = os.path.join(base_dir, "**", "*.pdf")
+    return glob.glob(pdf_pattern, recursive=True)
 
 
 def extract_text_from_pdf(pdf_path):
@@ -101,17 +110,16 @@ def batch_by_tokens(texts, metadatas, max_tokens=MAX_TOKENS_PER_REQUEST):
 
 def main():
     """메인 실행 함수"""
-    BASE_DIR = "./data/samsung_manuals/"
-    # PDF_NAME = "아가사랑_3kg_WA30DG2120EE.pdf"
+    BASE_DIR = "./data/manuals/"
+    EMBEDDINGS_MODEL = "text-embedding-3-small"
+    COLLECTION_NAME = "manuals"
+    VECTOR_DB_DIR = "./chroma"
 
-    # docs = process_pdf_text(BASE_DIR + PDF_NAME)
-    # print(docs)
-
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    embeddings = OpenAIEmbeddings(model=EMBEDDINGS_MODEL)
     vectordb = Chroma(
-        collection_name="samsung_manuals",
+        collection_name=COLLECTION_NAME,
         embedding_function=embeddings,
-        persist_directory="./chroma",
+        persist_directory=VECTOR_DB_DIR,
     )
 
     """PDF 텍스트 인덱싱"""
