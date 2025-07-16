@@ -7,6 +7,9 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_tavily import TavilySearch
+from langchain_core.documents import Document
+
 
 # Mac에서 pdfminer 경고 무시
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
@@ -26,7 +29,7 @@ def extract_text_from_pdf(pdf_path):
         return ""
 
 def analyze_query_and_retrieve(query: str, retriever, llm):
-    """쿼리 분석 + 관련 정보 검색"""
+    # 질문 분석 프롬프트
     prompt = ChatPromptTemplate.from_messages([
         ('system', """
         당신은 사용자의 질문을 분석하는 전문가입니다.
@@ -39,36 +42,54 @@ def analyze_query_and_retrieve(query: str, retriever, llm):
         }}"""),
         ('human', "질문: {query}")
     ])
-    
+
     chain = prompt | llm | StrOutputParser()
     analysis_result = chain.invoke({"query": query})
-    
+
     # JSON 파싱
     try:
         data = json.loads(analysis_result)
         keywords = data.get("keywords", [])
     except Exception:
         keywords = [query]
-    
-    # 키워드별 검색
+
     all_contexts = []
+
+    # TavilySearch로 웹 검색 도구 설정
+    tavily_tool = TavilySearch(max_results=5)
+
+    try:
+        # Tavily에서 검색
+        search_result = tavily_tool.invoke({"query": query})
+        
+        # 'results' 리스트 추출
+        web_results = search_result.get("results", [])
+        
+        # 각 결과를 Document로 변환
+        for item in web_results:
+            content = item.get('content', '')
+            url = item.get('url', '')
+            
+            if content:  # 내용이 있으면 추가
+                doc = Document(
+                    page_content=content,
+                    metadata={'source': url, 'title': item.get('title', '')}
+                )
+                all_contexts.append(doc)
+    except Exception as e:
+        print(f"웹 검색 오류: {e}")
+
+    # 기존 벡터 retriever도 검색
     for keyword in keywords:
         try:
             docs = retriever.invoke(keyword)
             all_contexts.extend(docs)
-        except:
+        except Exception as e:
+            print(f"벡터 검색 오류: {e}")
             continue
-    
-    # 중복 제거
-    unique = []
-    seen = set()
-    for doc in all_contexts:
-        if doc.page_content not in seen:
-            unique.append(doc)
-            seen.add(doc.page_content)
-    
-    combined_context = "\n\n".join([doc.page_content for doc in unique[:10]])
-    return combined_context, analysis_result
+
+    return all_contexts, analysis_result
+
 
 def enhanced_chain(query: str, retriever, llm, cot_prompt):
     context, analysis = analyze_query_and_retrieve(query, retriever, llm)
