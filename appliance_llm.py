@@ -3,26 +3,19 @@ import json
 import logging
 from dotenv import load_dotenv
 from pdfminer.high_level import extract_text
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.documents import Document
 
-# ✅ Mac에서 pdfminer 경고 무시
+# Mac에서 pdfminer 경고 무시
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
-# ✅ 환경변수 로드
+# 환경변수 로드
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-
-if not OPENAI_API_KEY:
-    print("⚠️ OPENAI_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")
-
-# ✅ 파일 경로 (Mac에서도 절대경로로 안전하게)
-FILE_PATH = os.path.abspath("./data/samsung_manuals/아가사랑_3kg_WA30DG2120EE.pdf")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 def extract_text_from_pdf(pdf_path):
     """PDF 텍스트 추출"""
@@ -87,22 +80,15 @@ def enhanced_chain(query: str, retriever, llm, cot_prompt):
     return llm.invoke(prompt_filled)
 
 def run_chatbot():
-    # ✅ 벡터화 준비
-    text = extract_text_from_pdf(FILE_PATH)
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50,
-        separators=['\n\n', '\n', ' ', '']
-    )
-    chunks = splitter.split_text(text)
-    docs = [Document(page_content=chunk) for chunk in chunks]
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
-    vector_store = Chroma.from_documents(
-        documents=docs,
-        embedding=embeddings
+    vectordb = Chroma(
+        collection_name="samsung_manuals",
+        embedding_function=embeddings,
+        persist_directory="./chroma",
     )
-    retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 8, "fetch_k": 20})
+
+    retriever = vectordb.as_retriever(search_type="mmr", search_kwargs={"k": 8, "fetch_k": 20})
     
     llm = ChatOpenAI(model=MODEL_NAME, temperature=0.3)
 
@@ -127,7 +113,7 @@ def run_chatbot():
     ])
 
     print("="*60)
-    print("🤖 삼성 BESPOKE AI 콤보 도우미 (Mac 대응 버전)")
+    print("🤖 삼성 세탁기/건조기 도우미")
     print("="*60)
 
     while True:
