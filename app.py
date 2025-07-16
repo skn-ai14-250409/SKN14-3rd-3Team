@@ -155,7 +155,7 @@ with col2:
                         f"""
                     <div class="message bot">
                         <div class="avatar">{avatar_icon}</div>
-                        <div class="message-content">{message_html}</div>
+                        <div class="message-content">{message["content"]}</div>
                     </div>
                     """,
                         unsafe_allow_html=True,
