@@ -172,7 +172,7 @@ class RAGIndexer:
             if score <= 0.3:
                 print(f"\n[TOP-{i + 1}]")
                 print(f'모델명 : {doc.metadata.get("model_name", "Unknown")}')
-                print(f"유사도 점수 : {score:.4f}")
+                print(f"코사인 거리 : {score:.4f}")
                 print(f"내용 : {doc.page_content[:200]}...")
                 print("-" * 50)
             else:
