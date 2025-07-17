@@ -203,8 +203,8 @@ def parse_product_info(result):
 
     parts = result.split("_")
     
-    # 모델명 찾기 (W, D, t로 시작하는 첫 항목)
-    model_idx = next((i for i, part in enumerate(parts) if part.startswith(("W", "D","t"))), None)
+    # 모델명 찾기 (W, D, t, f, r, R로 시작하는 첫 항목)
+    model_idx = next((i for i, part in enumerate(parts) if part.startswith(("W", "D","t","R","r","f"))), None)
     
     if model_idx == None:
         return {
