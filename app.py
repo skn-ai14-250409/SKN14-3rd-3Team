@@ -231,8 +231,8 @@ with col3:
             image = Image.open(current_conv["image"])
             result = search_vector_db_image(current_conv["image"])
             parsed = parse_product_info(result)
-            st.write(f"제품명: {parsed['제품명']}")
-            st.write(f"모델명: {parsed['모델명']}")
+            st.markdown(f"<h6>🛠️제품명: {parsed['제품명']}</h6>", unsafe_allow_html=True)
+            st.markdown(f"<h6>⚙️모델명: {parsed['모델명']}</h6>", unsafe_allow_html=True)
         except FileNotFoundError:
             st.error("이미지 파일을 찾을 수 없습니다. 다시 업로드해주세요.")
             current_conv["image"] = None
