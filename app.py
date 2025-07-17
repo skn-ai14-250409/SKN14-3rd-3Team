@@ -175,24 +175,6 @@ with col2:
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("**💡 빠른 질문**")
-    cols = st.columns(len(SAMPLE_FAQS))
-    for i, faq in enumerate(SAMPLE_FAQS):
-        with cols[i]:
-            if st.button(
-                faq,
-                key=f"faq_{i}_{st.session_state.current_conversation_id}",
-                help=f"{faq}에 대해 질문하기",
-            ):
-                current_conv["messages"].append(
-                    {
-                        "role": "user",
-                        "content": faq,
-                    }
-                )
-                st.session_state.is_typing = True
-                st.rerun()
-
     st.markdown("**📷 이미지 업로드 및 질문**")
     with st.form(
         key=f"chat_form_{st.session_state.current_conversation_id}",
