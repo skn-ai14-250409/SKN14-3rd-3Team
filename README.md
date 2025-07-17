@@ -34,8 +34,9 @@
 - 고객센터/기술지원의 ‘비효율’과 ‘반복적 문의’ 해소  
 - “내가 쓰는 제품, 모델명 몰라도” 사진 한 장이면 해결  
 - 삼성/LG 공식 정보 + 웹 정보를 융합한 “신속정확 Q&A”
-**개발 환경**: Colab, PyCharm, VS Code
-**기술 스택**: Selenium, Chroma, OpenAI, BeautifulSoup, LangChain, Streamlit  
+  
+- **개발 환경**: Colab, PyCharm, VS Code
+- **기술 스택**: Selenium, Chroma, OpenAI, BeautifulSoup, LangChain, Streamlit  
 ---
 
 ## 2-1. 시스템 구조 및 기술 아키텍처
