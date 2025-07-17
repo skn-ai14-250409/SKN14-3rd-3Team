@@ -273,20 +273,6 @@ if st.session_state.is_typing:
             last_user_message = msg["content"]
             break
 
-    sample_responses = {
-        "세탁기 에러코드 해결법": "세탁기 에러코드별 해결법을 안내드리겠습니다:\n\n• **IE 에러**: 급수 문제 - 수도꼭지 확인\n• **OE 에러**: 배수 문제 - 배수호스 점검\n• **UE 에러**: 불균형 - 세탁물 재배치\n• **PE 에러**: 급수 압력 - 수압 확인\n\n구체적인 에러코드를 알려주시면 더 자세한 해결법을 안내드릴게요!",
-        "건조기 필터 청소 방법": "건조기 필터 청소 방법을 단계별로 안내드립니다:\n\n1. **전원 끄기**: 안전을 위해 전원 차단\n2. **필터 분리**: 도어 하단 필터 손잡이로 빼내기\n3. **이물질 제거**: 손으로 보풀, 먼지 제거\n4. **물 세척**: 미지근한 물로 헹구기\n5. **건조 후 장착**: 완전히 말린 후 원위치\n\n✅ 매 사용 후 청소하시면 건조 효율이 높아집니다!",
-        "세탁 용량 가이드": "세탁 용량별 가이드를 안내드립니다:\n\n**👕 의류별 기준**\n• 셔츠: 200-250g\n• 청바지: 500-600g\n• 수건: 300-400g\n• 이불: 1.5-2kg\n\n**🏠 가족 구성별 권장**\n• 1-2인: 8kg\n• 3-4인: 10-12kg\n• 5인 이상: 15kg+\n\n용량의 80%만 채우시면 세탁 효과가 최적화됩니다!",
-        "세탁기 소음 해결법": "세탁기 소음 해결법을 안내드립니다:\n\n**🔧 체크포인트**\n1. **수평 조절**: 다리 높이 조정\n2. **바닥 확인**: 단단한 바닥에 설치\n3. **세탁물 양**: 적정량 준수\n4. **이물질 제거**: 동전, 단추 등 확인\n\n**🔇 소음 유형별 해결**\n• 진동음: 수평 재조정\n• 덜걱거림: 세탁물 재배치\n• 삐걱거림: 서비스 센터 문의\n\n문제가 지속되면 전문가 점검을 받으시길 권합니다.",
-        "건조 시간 단축 방법": "건조 시간 단축 방법을 안내드립니다:\n\n**⚡ 효율적인 건조 팁**\n1. **적정 용량**: 용량의 70% 이하\n2. **필터 청소**: 매번 사용 전후\n3. **의류 분리**: 두께별 분리 건조\n4. **수분 제거**: 탈수 시간 연장\n\n**🌪️ 건조 모드 활용**\n• 면 소재: 일반 건조\n• 화학섬유: 저온 건조\n• 두꺼운 의류: 센서 건조\n\n올바른 사용법으로 시간과 전력을 절약하세요!",
-        "이미지를 업로드했습니다.": "이미지를 확인했습니다. 업로드하신 이미지에 대해 무엇이 궁금하신가요?",
-    }
-
-    bot_response = sample_responses.get(
-        last_user_message,
-        f"'{last_user_message}'에 대한 질문을 접수했습니다. 매뉴얼을 기반으로 가장 정확한 답변을 준비하고 있습니다. 잠시만 기다려주세요!",
-    )
-
     image_path = None
     if current_conv["image"] is not None:
         image_path = os.path.abspath(current_conv["image"])
@@ -307,24 +293,22 @@ with st.sidebar:
         st.session_state.conversations = {}
         st.session_state.current_conversation_id = None
         st.rerun()
-    if st.button("📁 대화 기록 저장"):
-        try:
-            chat_history = {
-                "conversations": st.session_state.conversations,
-            }
-            st.download_button(
-                label="💾 JSON 다운로드",
-                data=json.dumps(chat_history, ensure_ascii=False, indent=2),
-                file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json",
-            )
-        except Exception as e:
-            st.error(f"파일 저장 중 오류 발생: {e}")
+
+    chat_history = {
+        "conversations": st.session_state.conversations,
+    }
+
+    st.download_button(
+        label="📁 모든 대화 기록 저장",
+        data=json.dumps(chat_history, ensure_ascii=False, indent=2),
+        file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        mime="application/json",
+    )
 
     st.markdown("---")
     st.markdown("### 📊 통계")
     total_messages = sum(
-        len(conv["messages"]) for conv in st.session_state.conversations.values()
+        len(conv["messages"]) -1 for conv in st.session_state.conversations.values()
     )
     st.metric("총 메시지", total_messages)
     st.metric("대화 수", len(st.session_state.conversations))
