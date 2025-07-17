@@ -1,0 +1,8 @@
+tornado==6.4.0
+streamlit==1.45.1
+tqdm==4.67.1
+langchain_chroma==0.2.4
+langchain_openai==0.3.27
+langchain_community==0.3.27
+langchain_tavily==0.2.7
+pdfminer.six
