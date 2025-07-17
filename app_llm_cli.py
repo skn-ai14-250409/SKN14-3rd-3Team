@@ -56,15 +56,17 @@ def extract_text_from_pdf(pdf_path):
 def analyze_query_and_retrieve(query: str, retriever, llm):
     # 질문 분석 프롬프트
     prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                """
-        당신은 사용자의 질문을 분석하는 전문가입니다.
-        고객에게 적절한 호응과 함께 친절한 답변을 해주세요.
-        다음 정보를 JSON으로 출력하세요:
+        [        ('system', """당신은 사용자의 질문을 분석하는 전문가입니다. 
+        주어진 질문에서 다음을 추출하세요:
+        
+        1. 주요 키워드 (3-5개)
+        2. 질문의 핵심 주제
+        3. 구체적인 조건이나 요구사항
+        4. 답변에서 다뤄야 할 세부 사항들
+        
+        JSON 형식으로 출력하세요:
         {{
-            "keywords": ["키워드1", "키워드2"],
+            "keywords": ["키워드1", "키워드2", "키워드3"],
             "main_topic": "주제",
             "conditions": ["조건1"],
             "details": ["세부사항1"]
@@ -165,33 +167,39 @@ def run_chatbot(query, image_path=None, history=[]):
     llm = ChatOpenAI(model=MODEL_NAME, temperature=0.3)
 
     cot_prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                """
-        Elaborate on the topic using a Tree of Thoughts and backtrack when necessary to construct a clear, cohesive Chain of Thought reasoning.
-        당신은 스마트한 가전 도우미입니다. 체계적으로 답변하세요:
+            [
+                (
+                    "system",
+                    """
+            Elaborate on the topic using a Tree of Thoughts and backtrack when necessary to construct a clear, cohesive Chain of Thought reasoning.
+            당신은 스마트한 가전 도우미입니다. 질문을 분석한 후에 관련 정보를 수집한 후, 체계적으로 답변하세요.:
+            ## 답변 지침
+            - 조건들을 나열하기보다는 통합하여 하나의 흐름으로 설명하십시오.
+            - 반복되거나 유사한 내용을 중복해서 설명하지 마십시오.
+            - 논리적 구조를 갖춘 명확한 문단 형태로 답변하십시오.
+            - 필요 시 예시나 유사 상황을 들어 이해를 도우십시오.
 
-        ## 질문 분석
-        [분석 내용]
-        ## 관련 정보
-        [정보]
-        ## 답변
-        ### 1. [조건 A]
-        ### 2. [조건 B]
-        ## 추가 안내
-        """,
-            ),
-            (
-                "human",
-                """
-        질문: {query}
-        분석: {analysis}
-        컨텍스트: {context}
-        """,
-            ),
-        ]
-    )
+            
+            예시 출력 :
+            
+       
+            - [체계적인 통합 설명을 한 문단 이상으로 기술]
+
+            ### 추가 안내
+            - [관련된 팁이나 참고 정보가 있으면 제공]
+            """,
+                ),
+                (
+                    "human",
+                    """
+            질문: {query}
+            분석: {analysis}
+            컨텍스트: {context}
+            """,
+                ),
+            ]
+        )
+
 
     result = enhanced_chain(query, retriever, llm, cot_prompt, history=history)
     return result.content
