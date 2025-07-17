@@ -3,9 +3,10 @@ import json
 import time
 import streamlit as st
 import html
+import markdown
 from PIL import Image
 from datetime import datetime
-from app_llm_cli import run_chatbot
+from app_llm_cli import run_chatbot, search_vector_db_image
 
 
 # 페이지 설정
@@ -151,16 +152,16 @@ with col2:
                         unsafe_allow_html=True,
                     )
                 else:  # role == 'assistant'
+                    html_content = markdown.markdown(message["content"])
                     st.markdown(
                         f"""
-                    <div class="message bot">
-                        <div class="avatar">{avatar_icon}</div>
-                        <div class="message-content">{message["content"]}</div>
-                    </div>
-                    """,
+                        <div class="message bot">
+                            <div class="avatar">{avatar_icon}</div>
+                            <div class="message-content">{html_content}</div>
+                        </div>
+                        """,
                         unsafe_allow_html=True,
                     )
-
         if st.session_state.is_typing:
             st.markdown(
                 """
@@ -193,19 +194,45 @@ with col2:
         send_button = st.form_submit_button("전송", use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
+def parse_product_info(result):
+    if result == -1:
+        return {
+            "제품명": "모델명을 찾을 수 없습니다",
+            "모델명": "없음"
+        }
+
+    parts = result.split("_")
+    
+    # 모델명 찾기 (W, D, t로 시작하는 첫 항목)
+    model_idx = next((i for i, part in enumerate(parts) if part.startswith(("W", "D","t"))), None)
+    
+    if model_idx == None:
+        return {
+            "제품명": "모델명을 찾을 수 없습니다",
+            "모델명": "없음"
+        }
+    
+    product_name = "_".join(parts[:model_idx])
+    model_name = parts[model_idx]
+
+    return {
+        "제품명": product_name,
+        "모델명": model_name
+    }
+
 # 오른쪽: 이미지 및 스펙
 with col3:
     st.markdown("### 업로드된 이미지 및 스펙")
     if current_conv["image"]:
-        # [수정 2] use_column_width 를 use_container_width 로 변경하여 경고 제거
         st.image(
             current_conv["image"], caption="업로드된 이미지", use_container_width=True
         )
         try:
             image = Image.open(current_conv["image"])
-            st.write(f"**파일명**: {os.path.basename(current_conv['image'])}")
-            st.write(f"**크기**: {os.path.getsize(current_conv['image'])} bytes")
-            st.write(f"**해상도**: {image.width} x {image.height} pixels")
+            result = search_vector_db_image(current_conv["image"])
+            parsed = parse_product_info(result)
+            st.write(f"제품명: {parsed['제품명']}")
+            st.write(f"모델명: {parsed['모델명']}")
         except FileNotFoundError:
             st.error("이미지 파일을 찾을 수 없습니다. 다시 업로드해주세요.")
             current_conv["image"] = None

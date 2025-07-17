@@ -160,7 +160,7 @@ class RAGIndexer:
             self.logger.error(f"Indexing failed: {e}")
             raise
 
-    def search_and_show(self, user_img: str, k: int = 1) -> None:
+    def search_and_show(self, user_img: str, k: int = 1) -> str:
         """쿼리로 검색하고 결과 표시"""
 
         # base64 길이 800으로 제한
@@ -168,7 +168,15 @@ class RAGIndexer:
 
         # 유사도 검색
         results = self.vectordb.similarity_search_with_score(user_img, k=k)
-        return results[0][0].metadata["model_name"] if results else -1
+
+        if not results:
+            return -1
+
+        doc, score = results[0]
+        if score <= 0.3:
+            return doc.metadata.get("model_name", -1)
+        else:
+            return -1
 
     def get_collection_info(self) -> Dict[str, Any]:
         """컬렉션 정보 조회"""
