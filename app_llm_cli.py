@@ -162,7 +162,10 @@ def run_chatbot(query, image_path=None, history=[]):
 
     if image_path:
         model_code = search_vector_db_image(image_path)
-        query = f"{query} (모델코드: {model_code})"
+        if model_code == -1:
+            query = f"{query} (모델코드: 확인불가)"
+        else:
+            query = f"{query} (모델코드: {model_code})"
 
     llm = ChatOpenAI(model=MODEL_NAME, temperature=0.3)
 
